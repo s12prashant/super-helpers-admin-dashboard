@@ -1,4 +1,5 @@
-import { Activity, Database, ShieldCheck, Users } from "lucide-react";
+import Link from "next/link";
+import { Activity, Building2, Database, ShieldCheck, Users } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -64,6 +65,13 @@ export default async function AdminPage() {
           <p className="metric-label">Auth users</p>
           <p className="metric-value">{summary.userCount ?? "--"}</p>
         </div>
+        <Link className="metric-card metric-link-card" href="/admin/employers">
+          <div className="metric-icon">
+            <Building2 size={20} />
+          </div>
+          <p className="metric-label">Employers</p>
+          <p className="metric-value">View list</p>
+        </Link>
         <div className="metric-card" id="health">
           <div className="metric-icon">
             <Activity size={20} />

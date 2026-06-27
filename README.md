@@ -6,6 +6,7 @@ Next.js admin dashboard for SuperHelper, using the production Supabase project f
 
 - Next.js App Router
 - TypeScript
+- Prisma client for existing Postgres admin data
 - Supabase Auth and server-side Supabase clients
 - Server route handlers for backend/admin-only operations
 
@@ -29,6 +30,7 @@ Required variables:
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ADMIN_EMAILS=
+DATABASE_URL=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` must only be used server-side. Do not prefix it with `NEXT_PUBLIC_`, do not import it into client components, and do not commit `.env` or `.env.local`.
@@ -57,6 +59,7 @@ Current routes:
 - `POST /api/auth/logout`
 - `GET /api/admin/me`
 - `GET /api/admin/health`
+- `GET /api/admin/employers`
 
 ## Generated Files
 
