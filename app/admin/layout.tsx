@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Building2, LayoutDashboard, MessageCircle, ShieldCheck, Users } from "lucide-react";
+import { Activity, Building2, LayoutDashboard, MessageCircle, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -33,6 +33,10 @@ export default async function AdminLayout({
           <Link href="/admin/employers" className="nav-item">
             <Building2 size={18} />
             Employers
+          </Link>
+          <Link href="/admin/assistants" className="nav-item">
+            <UserCheck size={18} />
+            Assistants
           </Link>
           <Link href="/admin/leads" className="nav-item">
             <MessageCircle size={18} />
