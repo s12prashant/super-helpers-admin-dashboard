@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock3, RefreshCcw, UserCheck, Users } from "lucide-react";
+import { CalendarDays, Clock3, RefreshCcw, UserCheck, Users } from "lucide-react";
 import {
   assistantStatuses,
   type AssistantRegistrationItem,
@@ -13,6 +13,12 @@ type AssistantRegistrationsResponse = {
   status: number;
   message: string;
   data: AssistantRegistrationSummary;
+};
+
+type AssistantUpdateResponse = {
+  status: number;
+  message: string;
+  data: AssistantRegistrationItem;
 };
 
 const statusLabels: Record<AssistantStatus, string> = {
@@ -34,6 +40,7 @@ export function AssistantRegistrationsPanel() {
   const [to, setTo] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [updatingAssistantId, setUpdatingAssistantId] = useState<number | null>(null);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -85,6 +92,36 @@ export function AssistantRegistrationsPanel() {
 
   function countFor(assistantStatus: AssistantStatus) {
     return summary.countsByStatus.find((item) => item.status === assistantStatus)?.count ?? 0;
+  }
+
+  async function updateAssistantStatus(id: number, nextStatus: AssistantStatus) {
+    setMessage(null);
+    setUpdatingAssistantId(id);
+
+    const response = await fetch(`/api/admin/assistants/${id}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: nextStatus }),
+    });
+    const result = (await response.json().catch(() => null)) as AssistantUpdateResponse | null;
+
+    setUpdatingAssistantId(null);
+
+    if (!response.ok) {
+      setMessage(result?.message ?? "Unable to update assistant status");
+      return;
+    }
+
+    if (result?.data) {
+      setSummary((currentSummary) => ({
+        ...currentSummary,
+        recentAssistants: currentSummary.recentAssistants.map((item) => (item.id === id ? result.data : item)),
+      }));
+    }
+
+    await loadRegistrations();
   }
 
   return (
@@ -187,7 +224,12 @@ export function AssistantRegistrationsPanel() {
               </tr>
             ) : null}
             {summary.recentAssistants.map((item) => (
-              <AssistantRow item={item} key={item.id} />
+              <AssistantRow
+                isUpdating={updatingAssistantId === item.id}
+                item={item}
+                key={item.id}
+                onStatusChange={updateAssistantStatus}
+              />
             ))}
           </tbody>
         </table>
@@ -196,7 +238,15 @@ export function AssistantRegistrationsPanel() {
   );
 }
 
-function AssistantRow({ item }: { item: AssistantRegistrationItem }) {
+function AssistantRow({
+  isUpdating,
+  item,
+  onStatusChange,
+}: {
+  isUpdating: boolean;
+  item: AssistantRegistrationItem;
+  onStatusChange: (id: number, status: AssistantStatus) => void;
+}) {
   return (
     <tr>
       <td>
@@ -217,7 +267,18 @@ function AssistantRow({ item }: { item: AssistantRegistrationItem }) {
         </div>
       </td>
       <td>
-        <span className="status-badge">{statusLabels[item.status]}</span>
+        <select
+          className="status-select"
+          disabled={isUpdating}
+          value={item.status}
+          onChange={(event) => onStatusChange(item.id, event.target.value as AssistantStatus)}
+        >
+          {assistantStatuses.map((assistantStatus) => (
+            <option key={assistantStatus} value={assistantStatus}>
+              {statusLabels[assistantStatus]}
+            </option>
+          ))}
+        </select>
       </td>
       <td>{formatDate(item.created_at)}</td>
     </tr>

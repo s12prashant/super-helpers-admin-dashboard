@@ -454,6 +454,16 @@ h2 {
   padding: 0 10px;
 }
 
+.status-select {
+  min-width: 138px;
+  font-weight: 800;
+}
+
+.status-select:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .lead-actions {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
