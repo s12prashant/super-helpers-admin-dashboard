@@ -21,6 +21,9 @@ type StatusCountRow = {
   count: bigint | number;
 };
 
+const DEFAULT_PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
+
 export async function GET(request: Request) {
   const admin = await getCurrentAdmin();
 
@@ -33,12 +36,14 @@ export async function GET(request: Request) {
   const selectedStatus = isAssistantStatus(requestedStatus) ? requestedStatus : null;
   const from = parseDateFilter(url.searchParams.get("from"));
   const toExclusive = getExclusiveEndDate(url.searchParams.get("to"));
+  const pageSize = parsePageSize(url.searchParams.get("pageSize"));
+  const requestedPage = parsePage(url.searchParams.get("page"));
   const filters = buildAssistantFilters({ status: selectedStatus, from, toExclusive });
   const dateOnlyFilters = buildAssistantFilters({ status: null, from, toExclusive });
 
   try {
     const prisma = getPrisma();
-    const [allTimeRows, filteredRows, statusRows, recentRows] = await Promise.all([
+    const [allTimeRows, filteredRows, statusRows] = await Promise.all([
       prisma.$queryRaw<CountRow[]>`SELECT COUNT(*) AS count FROM assistant`,
       prisma.$queryRaw<CountRow[]>`
         SELECT COUNT(*) AS count
@@ -51,14 +56,19 @@ export async function GET(request: Request) {
         ${dateOnlyFilters}
         GROUP BY status
       `,
-      prisma.$queryRaw<AssistantRegistrationRow[]>`
-        SELECT id, name, mobile, city, pincode, status::text AS status, created_at
-        FROM assistant
-        ${filters}
-        ORDER BY created_at DESC
-        LIMIT 50
-      `,
     ]);
+    const totalRegistered = Number(filteredRows[0]?.count ?? 0);
+    const totalPages = Math.max(1, Math.ceil(totalRegistered / pageSize));
+    const page = Math.min(requestedPage, totalPages);
+    const offset = (page - 1) * pageSize;
+    const recentRows = await prisma.$queryRaw<AssistantRegistrationRow[]>`
+      SELECT id, name, mobile, city, pincode, status::text AS status, created_at
+      FROM assistant
+      ${filters}
+      ORDER BY created_at DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset}
+    `;
 
     const countsByStatus = assistantStatuses.map((assistantStatus) => ({
       status: assistantStatus,
@@ -69,8 +79,13 @@ export async function GET(request: Request) {
       status: 1,
       message: "Assistant registration summary fetched",
       data: {
-        totalRegistered: Number(filteredRows[0]?.count ?? 0),
+        totalRegistered,
         allTimeRegistered: Number(allTimeRows[0]?.count ?? 0),
+        pagination: {
+          page,
+          pageSize,
+          totalPages,
+        },
         countsByStatus,
         recentAssistants: recentRows.map(mapAssistantRegistrationRow),
       },
@@ -90,6 +105,26 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function parsePage(value: string | null) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return 1;
+  }
+
+  return parsed;
+}
+
+function parsePageSize(value: string | null) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return DEFAULT_PAGE_SIZE;
+  }
+
+  return Math.min(parsed, MAX_PAGE_SIZE);
 }
 
 function buildAssistantFilters({

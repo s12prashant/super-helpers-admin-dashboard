@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock3, RefreshCcw, UserCheck, Users } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, RefreshCcw, UserCheck, Users } from "lucide-react";
 import {
   assistantStatuses,
   type AssistantRegistrationItem,
@@ -28,16 +28,25 @@ const statusLabels: Record<AssistantStatus, string> = {
   BLOCKED: "Blocked",
 };
 
+const pageSizeOptions = [10, 25, 50, 100] as const;
+
 export function AssistantRegistrationsPanel() {
   const [summary, setSummary] = useState<AssistantRegistrationSummary>({
     totalRegistered: 0,
     allTimeRegistered: 0,
+    pagination: {
+      page: 1,
+      pageSize: 25,
+      totalPages: 1,
+    },
     countsByStatus: [],
     recentAssistants: [],
   });
   const [status, setStatus] = useState<AssistantStatus | "">("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<(typeof pageSizeOptions)[number]>(25);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingAssistantId, setUpdatingAssistantId] = useState<number | null>(null);
@@ -57,8 +66,11 @@ export function AssistantRegistrationsPanel() {
       params.set("to", to);
     }
 
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+
     return params.toString();
-  }, [from, status, to]);
+  }, [from, page, pageSize, status, to]);
 
   const loadRegistrations = useCallback(async () => {
     setIsLoading(true);
@@ -80,11 +92,16 @@ export function AssistantRegistrationsPanel() {
       result?.data ?? {
         totalRegistered: 0,
         allTimeRegistered: 0,
+        pagination: {
+          page: 1,
+          pageSize,
+          totalPages: 1,
+        },
         countsByStatus: [],
         recentAssistants: [],
       },
     );
-  }, [queryString]);
+  }, [pageSize, queryString]);
 
   useEffect(() => {
     loadRegistrations();
@@ -92,6 +109,14 @@ export function AssistantRegistrationsPanel() {
 
   function countFor(assistantStatus: AssistantStatus) {
     return summary.countsByStatus.find((item) => item.status === assistantStatus)?.count ?? 0;
+  }
+
+  function changePage(nextPage: number) {
+    setPage(Math.min(Math.max(nextPage, 1), summary.pagination.totalPages));
+  }
+
+  function resetToFirstPage() {
+    setPage(1);
   }
 
   async function updateAssistantStatus(id: number, nextStatus: AssistantStatus) {
@@ -157,13 +182,33 @@ export function AssistantRegistrationsPanel() {
       <section className="lead-toolbar assistant-toolbar" aria-label="Assistant registration filters">
         <label className="date-field">
           <CalendarDays size={17} />
-          <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+          <input
+            type="date"
+            value={from}
+            onChange={(event) => {
+              setFrom(event.target.value);
+              resetToFirstPage();
+            }}
+          />
         </label>
         <label className="date-field">
           <CalendarDays size={17} />
-          <input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+          <input
+            type="date"
+            value={to}
+            onChange={(event) => {
+              setTo(event.target.value);
+              resetToFirstPage();
+            }}
+          />
         </label>
-        <select value={status} onChange={(event) => setStatus(event.target.value as AssistantStatus | "")}>
+        <select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as AssistantStatus | "");
+            resetToFirstPage();
+          }}
+        >
           <option value="">All statuses</option>
           {assistantStatuses.map((assistantStatus) => (
             <option key={assistantStatus} value={assistantStatus}>
@@ -178,6 +223,7 @@ export function AssistantRegistrationsPanel() {
             setFrom("");
             setTo("");
             setStatus("");
+            resetToFirstPage();
           }}
         >
           <Clock3 size={17} />
@@ -191,7 +237,10 @@ export function AssistantRegistrationsPanel() {
             className={status === assistantStatus ? "status-tile active" : "status-tile"}
             key={assistantStatus}
             type="button"
-            onClick={() => setStatus(status === assistantStatus ? "" : assistantStatus)}
+            onClick={() => {
+              setStatus(status === assistantStatus ? "" : assistantStatus);
+              resetToFirstPage();
+            }}
           >
             <span>{statusLabels[assistantStatus]}</span>
             <strong>{countFor(assistantStatus)}</strong>
@@ -234,7 +283,83 @@ export function AssistantRegistrationsPanel() {
           </tbody>
         </table>
       </section>
+
+      <PaginationBar
+        isLoading={isLoading}
+        page={summary.pagination.page}
+        pageSize={summary.pagination.pageSize}
+        totalItems={summary.totalRegistered}
+        totalPages={summary.pagination.totalPages}
+        onPageChange={changePage}
+        onPageSizeChange={(nextPageSize) => {
+          setPageSize(nextPageSize);
+          setPage(1);
+        }}
+      />
     </div>
+  );
+}
+
+function PaginationBar({
+  isLoading,
+  page,
+  pageSize,
+  totalItems,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  isLoading: boolean;
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: (typeof pageSizeOptions)[number]) => void;
+}) {
+  const firstItem = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastItem = Math.min(page * pageSize, totalItems);
+
+  return (
+    <section className="pagination-bar" aria-label="Assistant pagination">
+      <span>
+        {firstItem}-{lastItem} of {totalItems}
+      </span>
+      <label>
+        Rows
+        <select
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value) as (typeof pageSizeOptions)[number])}
+        >
+          {pageSizeOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="pagination-actions">
+        <button
+          className="secondary-button icon-button"
+          disabled={isLoading || page <= 1}
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+        >
+          <ChevronLeft size={17} />
+        </button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <button
+          className="secondary-button icon-button"
+          disabled={isLoading || page >= totalPages}
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+        >
+          <ChevronRight size={17} />
+        </button>
+      </div>
+    </section>
   );
 }
 

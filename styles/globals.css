@@ -265,6 +265,10 @@ h2 {
   max-width: 1320px;
 }
 
+.orders-page {
+  max-width: 1480px;
+}
+
 .employers-metrics {
   grid-template-columns: repeat(2, minmax(220px, 1fr));
 }
@@ -334,6 +338,10 @@ h2 {
   grid-template-columns: minmax(180px, 220px) minmax(180px, 220px) minmax(160px, 190px) auto;
 }
 
+.orders-toolbar {
+  grid-template-columns: minmax(280px, 1fr) minmax(180px, 220px) minmax(180px, 220px) minmax(180px, 220px);
+}
+
 .lead-create-form {
   grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
 }
@@ -381,6 +389,38 @@ h2 {
   background: var(--surface);
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.pagination-bar label,
+.pagination-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-bar select {
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0 10px;
+  font-weight: 800;
+}
+
+.icon-button {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+}
+
 .lead-table {
   width: 100%;
   min-width: 1040px;
@@ -394,6 +434,10 @@ h2 {
 
 .assistant-table {
   min-width: 920px;
+}
+
+.orders-table {
+  min-width: 1240px;
 }
 
 .lead-table th,
@@ -483,6 +527,141 @@ h2 {
   min-height: 74px;
   padding: 10px 12px;
   resize: vertical;
+}
+
+.orders-tabs {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 4px;
+}
+
+.orders-tabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 850;
+  padding: 0 16px;
+}
+
+.orders-tabs button.active {
+  background: var(--accent);
+  color: white;
+}
+
+.order-form {
+  display: grid;
+  gap: 18px;
+}
+
+.order-form-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-dark);
+}
+
+.order-form-title h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.order-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 12px;
+}
+
+.field textarea {
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.checkbox-field {
+  align-content: end;
+  grid-template-columns: 18px 1fr;
+}
+
+.checkbox-field input {
+  min-height: auto;
+}
+
+.order-notes {
+  grid-column: span 2;
+}
+
+.amount-summary,
+.provider-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.amount-summary span,
+.amount-summary strong,
+.provider-grid span {
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcf8;
+  color: #334039;
+  padding: 8px 10px;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.provider-grid .section-kicker {
+  grid-column: 1 / -1;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  overflow-y: auto;
+  background: rgba(18, 20, 23, 0.42);
+  padding: 34px;
+}
+
+.order-modal {
+  display: grid;
+  width: min(1180px, 100%);
+  gap: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
 }
 
 .login-page {
@@ -603,5 +782,15 @@ h2 {
   .lead-toolbar,
   .lead-create-form {
     grid-template-columns: 1fr;
+  }
+
+  .order-form-grid,
+  .orders-toolbar,
+  .provider-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-notes {
+    grid-column: auto;
   }
 }

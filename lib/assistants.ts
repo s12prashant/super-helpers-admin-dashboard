@@ -5,6 +5,11 @@ export type AssistantStatus = (typeof assistantStatuses)[number];
 export type AssistantRegistrationSummary = {
   totalRegistered: number;
   allTimeRegistered: number;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
   countsByStatus: Array<{
     status: AssistantStatus;
     count: number;
