@@ -378,19 +378,19 @@ function AssistantRow({
   const profileUrl = `https://www.superhelpers.in/profile/${item.id}`;
 
   const whatsappMessage = [
-    `🎉 Congratulations ${item.name || ""} !`,
+    `\uD83C\uDF89 Congratulations ${item.name || ""} !`,
     ``,
-    `Your profile on Super Helpers has been *approved*! 🎊`,
+    `Your profile on Super Helpers has been *approved*! \uD83C\uDF8A`,
     ``,
     `People will now be able to directly reach out to you for work opportunities.`,
     ``,
-    `✅ You can view your profile here:`,
+    `\u2705 You can view your profile here:`,
     profileUrl,
     ``,
-    `📤 Share your profile link with others so they can find and contact you easily!`,
+    `\uD83D\uDCE4 Share your profile link with others so they can find and contact you easily!`,
     ``,
-    `Welcome aboard — wishing you great success! 🙌`,
-    `– Team Super Helpers`,
+    `Welcome aboard \u2014 wishing you great success! \uD83D\uDE4C`,
+    `\u2013 Team Super Helpers`,
   ].join("\n");
 
   const whatsappUrl = `https://wa.me/${item.mobile.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`;
@@ -459,7 +459,7 @@ function AssistantRow({
           aria-disabled={item.status !== "APPROVED"}
           onClick={item.status !== "APPROVED" ? (e) => e.preventDefault() : undefined}
         >
-          💬 WhatsApp
+          \uD83D\uDCAC WhatsApp
         </a>
       </td>
     </tr>
