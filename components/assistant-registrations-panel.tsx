@@ -254,22 +254,25 @@ export function AssistantRegistrationsPanel() {
         <table className="lead-table assistant-table">
           <thead>
             <tr>
+              <th>ID</th>
               <th>Assistant</th>
               <th>Mobile</th>
               <th>Location</th>
               <th>Status</th>
               <th>Registered</th>
+              <th>Edit Profile</th>
+              <th>WhatsApp</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={5}>Loading assistant registrations...</td>
+                <td colSpan={8}>Loading assistant registrations...</td>
               </tr>
             ) : null}
             {!isLoading && summary.recentAssistants.length === 0 ? (
               <tr>
-                <td colSpan={5}>No assistants found.</td>
+                <td colSpan={8}>No assistants found.</td>
               </tr>
             ) : null}
             {summary.recentAssistants.map((item) => (
@@ -372,12 +375,42 @@ function AssistantRow({
   item: AssistantRegistrationItem;
   onStatusChange: (id: number, status: AssistantStatus) => void;
 }) {
+  const profileUrl = `https://www.superhelpers.in/profile/${item.id}`;
+
+  const whatsappMessage = [
+    `🎉 Congratulations ${item.name || ""} !`,
+    ``,
+    `Your profile on Super Helpers has been *approved*! 🎊`,
+    ``,
+    `People will now be able to directly reach out to you for work opportunities.`,
+    ``,
+    `✅ You can view your profile here:`,
+    profileUrl,
+    ``,
+    `📤 Share your profile link with others so they can find and contact you easily!`,
+    ``,
+    `Welcome aboard — wishing you great success! 🙌`,
+    `– Team Super Helpers`,
+  ].join("\n");
+
+  const whatsappUrl = `https://wa.me/${item.mobile.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`;
+
   return (
     <tr>
       <td>
+        <a
+          className="assistant-id-link"
+          href={profileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={`View profile #${item.id}`}
+        >
+          #{item.id}
+        </a>
+      </td>
+      <td>
         <div className="lead-primary">
           <strong>{item.name || "Unnamed assistant"}</strong>
-          <span>{item.id}</span>
         </div>
       </td>
       <td>
@@ -406,6 +439,29 @@ function AssistantRow({
         </select>
       </td>
       <td>{formatDate(item.created_at)}</td>
+      <td>
+        <a
+          className="edit-profile-link"
+          href={`https://www.superhelpers.in/my-account/edit-helper-profile?id=${item.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Edit Profile
+        </a>
+      </td>
+      <td>
+        <a
+          className={`whatsapp-button${item.status !== "APPROVED" ? " whatsapp-button--disabled" : ""}`}
+          href={item.status === "APPROVED" ? whatsappUrl : undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={item.status !== "APPROVED" ? "Approve the assistant first" : "Send WhatsApp approval message"}
+          aria-disabled={item.status !== "APPROVED"}
+          onClick={item.status !== "APPROVED" ? (e) => e.preventDefault() : undefined}
+        >
+          💬 WhatsApp
+        </a>
+      </td>
     </tr>
   );
 }
