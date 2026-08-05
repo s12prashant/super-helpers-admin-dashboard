@@ -33,11 +33,23 @@ export async function GET(request: Request) {
   const filters: Prisma.Sql[] = [];
 
   if (workCategoryId) {
-    filters.push(Prisma.sql`ufs."workCat" = ${workCategoryId}`);
+    filters.push(Prisma.sql`
+      EXISTS (
+        SELECT 1
+        FROM unnest(string_to_array(COALESCE(ufs."workCat", ''), ',')) AS category_id(value)
+        WHERE btrim(category_id.value) = ${workCategoryId}
+      )
+    `);
   }
 
   if (workTimeId) {
-    filters.push(Prisma.sql`ufs."workTime" = ${workTimeId}`);
+    filters.push(Prisma.sql`
+      EXISTS (
+        SELECT 1
+        FROM unnest(string_to_array(COALESCE(ufs."workTime", ''), ',')) AS work_time_id(value)
+        WHERE btrim(work_time_id.value) = ${workTimeId}
+      )
+    `);
   }
 
   if (gender) {
@@ -91,15 +103,33 @@ export async function GET(request: Request) {
       SELECT
         ufs.id,
         ufs."workCat" AS "workCategoryId",
-        wc.name AS "workCategoryName",
+        work_category_names.name AS "workCategoryName",
         ufs."workTime" AS "workTimeId",
-        wt.name AS "workTimeName",
+        work_time_names.name AS "workTimeName",
         ufs.gender::text AS gender,
         ufs.pincode::text AS pincode,
         ufs."createdAt" AS "createdAt"
       FROM "UserFilterSearch" ufs
-      LEFT JOIN "workCategory" wc ON wc.id::text = ufs."workCat"
-      LEFT JOIN "workTime" wt ON wt.id::text = ufs."workTime"
+      LEFT JOIN LATERAL (
+        SELECT string_agg(
+          COALESCE(wc.name, 'Unknown (#' || btrim(category_id.value) || ')'),
+          ', ' ORDER BY category_id.position
+        ) AS name
+        FROM unnest(string_to_array(COALESCE(ufs."workCat", ''), ','))
+          WITH ORDINALITY AS category_id(value, position)
+        LEFT JOIN "workCategory" wc ON wc.id::text = btrim(category_id.value)
+        WHERE btrim(category_id.value) <> ''
+      ) work_category_names ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT string_agg(
+          COALESCE(wt.name, 'Unknown (#' || btrim(work_time_id.value) || ')'),
+          ', ' ORDER BY work_time_id.position
+        ) AS name
+        FROM unnest(string_to_array(COALESCE(ufs."workTime", ''), ','))
+          WITH ORDINALITY AS work_time_id(value, position)
+        LEFT JOIN "workTime" wt ON wt.id::text = btrim(work_time_id.value)
+        WHERE btrim(work_time_id.value) <> ''
+      ) work_time_names ON TRUE
       ${where}
       ORDER BY ufs."createdAt" DESC NULLS LAST, ufs.id DESC
       LIMIT ${pageSize}
