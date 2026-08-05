@@ -269,6 +269,15 @@ h2 {
   max-width: 1480px;
 }
 
+.user-filter-search-page {
+  max-width: 1480px;
+}
+
+.page-summary {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
 .employers-metrics {
   grid-template-columns: repeat(2, minmax(220px, 1fr));
 }
@@ -340,6 +349,31 @@ h2 {
 
 .orders-toolbar {
   grid-template-columns: minmax(280px, 1fr) minmax(180px, 220px) minmax(180px, 220px) minmax(180px, 220px);
+}
+
+.user-filter-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr)) minmax(150px, 0.8fr) repeat(2, minmax(170px, 0.9fr)) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-filter-toolbar select,
+.user-filter-toolbar > input,
+.user-filter-toolbar .date-field {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0 12px;
+}
+
+.user-filter-toolbar .date-field input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
 }
 
 .lead-create-form {
@@ -497,6 +531,10 @@ h2 {
 
 .orders-table {
   min-width: 1240px;
+}
+
+.user-filter-search-table {
+  min-width: 900px;
 }
 
 .lead-table th,
@@ -845,6 +883,7 @@ h2 {
 
   .order-form-grid,
   .orders-toolbar,
+  .user-filter-toolbar,
   .provider-grid {
     grid-template-columns: 1fr;
   }

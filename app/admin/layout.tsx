@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Activity,
   Building2,
+  ListFilter,
   LayoutDashboard,
   MessageCircle,
   PackageCheck,
@@ -54,6 +55,10 @@ export default async function AdminLayout({
           <Link href="/admin/orders" className="nav-item">
             <PackageCheck size={18} />
             Orders
+          </Link>
+          <Link href="/admin/user-filter-search" className="nav-item">
+            <ListFilter size={18} />
+            User Filter Search
           </Link>
           <Link href="/admin#health" className="nav-item">
             <Activity size={18} />
