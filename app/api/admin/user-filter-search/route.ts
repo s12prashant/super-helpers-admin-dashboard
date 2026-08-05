@@ -22,8 +22,8 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const workCategoryId = parsePositiveInteger(url.searchParams.get("workCat"));
-  const workTimeId = parsePositiveInteger(url.searchParams.get("workTime"));
+  const workCategoryId = url.searchParams.get("workCat")?.trim() || null;
+  const workTimeId = url.searchParams.get("workTime")?.trim() || null;
   const gender = url.searchParams.get("gender")?.trim() || null;
   const pincode = url.searchParams.get("pincode")?.trim() || null;
   const from = parseDate(url.searchParams.get("from"));
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     const [countRows, workCategories, workTimes, genderRows] = await Promise.all([
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*) AS count
-        FROM "userFilterSearch" ufs
+        FROM "UserFilterSearch" ufs
         ${where}
       `),
       prisma.$queryRaw<UserFilterOption[]>`
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       `,
       prisma.$queryRaw<GenderRow[]>`
         SELECT DISTINCT gender::text AS gender
-        FROM "userFilterSearch"
+        FROM "UserFilterSearch"
         WHERE gender IS NOT NULL
         ORDER BY gender ASC
       `,
@@ -97,9 +97,9 @@ export async function GET(request: Request) {
         ufs.gender::text AS gender,
         ufs.pincode::text AS pincode,
         ufs."createdAt" AS "createdAt"
-      FROM "userFilterSearch" ufs
-      LEFT JOIN "workCategory" wc ON wc.id = ufs."workCat"
-      LEFT JOIN "workTime" wt ON wt.id = ufs."workTime"
+      FROM "UserFilterSearch" ufs
+      LEFT JOIN "workCategory" wc ON wc.id::text = ufs."workCat"
+      LEFT JOIN "workTime" wt ON wt.id::text = ufs."workTime"
       ${where}
       ORDER BY ufs."createdAt" DESC NULLS LAST, ufs.id DESC
       LIMIT ${pageSize}

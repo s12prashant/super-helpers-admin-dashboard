@@ -6,10 +6,10 @@ export type UserFilterOption = {
 };
 
 export type UserFilterSearchItem = {
-  id: number;
-  workCategoryId: number | null;
+  id: string;
+  workCategoryId: string | null;
   workCategory: string | null;
-  workTimeId: number | null;
+  workTimeId: string | null;
   workTime: string | null;
   gender: string | null;
   pincode: string | null;
@@ -17,10 +17,10 @@ export type UserFilterSearchItem = {
 };
 
 export type UserFilterSearchRow = {
-  id: number;
-  workCategoryId: number | null;
+  id: string;
+  workCategoryId: string | null;
   workCategoryName: string | null;
-  workTimeId: number | null;
+  workTimeId: string | null;
   workTimeName: string | null;
   gender: string | null;
   pincode: string | number | null;
@@ -42,10 +42,10 @@ export type UserFilterSearchListData = {
 
 export function mapUserFilterSearchRow(row: UserFilterSearchRow): UserFilterSearchItem {
   return {
-    id: Number(row.id),
-    workCategoryId: row.workCategoryId === null ? null : Number(row.workCategoryId),
+    id: row.id,
+    workCategoryId: row.workCategoryId,
     workCategory: lookupLabel(row.workCategoryName, row.workCategoryId),
-    workTimeId: row.workTimeId === null ? null : Number(row.workTimeId),
+    workTimeId: row.workTimeId,
     workTime: lookupLabel(row.workTimeName, row.workTimeId),
     gender: row.gender,
     pincode: row.pincode === null ? null : String(row.pincode),
@@ -53,7 +53,7 @@ export function mapUserFilterSearchRow(row: UserFilterSearchRow): UserFilterSear
   };
 }
 
-function lookupLabel(name: string | null, id: number | null) {
+function lookupLabel(name: string | null, id: string | null) {
   if (name) {
     return name;
   }
