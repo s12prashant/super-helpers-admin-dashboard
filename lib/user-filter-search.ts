@@ -40,6 +40,40 @@ export type UserFilterSearchListData = {
   };
 };
 
+export type UserFilterSearchAnalyticsData = {
+  summary: {
+    totalSearches: number;
+    averagePerDay: number;
+    activeDays: number;
+    peakDay: { date: string | null; count: number };
+    previousPeriodTotal: number | null;
+    percentageChange: number | null;
+  };
+  dailyTrend: Array<{
+    date: string;
+    count: number;
+    previousCount: number | null;
+  }>;
+  breakdowns: {
+    workCategories: UserFilterSearchBreakdown[];
+    workTimes: UserFilterSearchBreakdown[];
+    genders: UserFilterSearchBreakdown[];
+    pincodes: UserFilterSearchBreakdown[];
+  };
+  meta: {
+    from: string;
+    to: string;
+    timezone: "Asia/Kolkata";
+    compared: boolean;
+  };
+};
+
+export type UserFilterSearchBreakdown = {
+  id?: string;
+  label: string;
+  count: number;
+};
+
 export function mapUserFilterSearchRow(row: UserFilterSearchRow): UserFilterSearchItem {
   return {
     id: row.id,

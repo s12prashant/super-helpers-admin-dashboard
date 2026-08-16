@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import {
+  buildUserFilterSearchWhere,
+  parseUserFilterSearchFilters,
+} from "@/lib/server/user-filter-search-filters";
+import {
   mapUserFilterSearchRow,
   userFilterSearchPageSizeOptions,
   type UserFilterOption,
@@ -22,53 +26,10 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const workCategoryId = url.searchParams.get("workCat")?.trim() || null;
-  const workTimeId = url.searchParams.get("workTime")?.trim() || null;
-  const gender = url.searchParams.get("gender")?.trim() || null;
-  const pincode = url.searchParams.get("pincode")?.trim() || null;
-  const from = parseDate(url.searchParams.get("from"));
-  const to = parseDate(url.searchParams.get("to"), true);
+  const filters = parseUserFilterSearchFilters(url);
   const requestedPage = parsePositiveInteger(url.searchParams.get("page")) ?? 1;
   const pageSize = parsePageSize(url.searchParams.get("pageSize"));
-  const filters: Prisma.Sql[] = [];
-
-  if (workCategoryId) {
-    filters.push(Prisma.sql`
-      EXISTS (
-        SELECT 1
-        FROM unnest(string_to_array(COALESCE(ufs."workCat", ''), ',')) AS category_id(value)
-        WHERE btrim(category_id.value) = ${workCategoryId}
-      )
-    `);
-  }
-
-  if (workTimeId) {
-    filters.push(Prisma.sql`
-      EXISTS (
-        SELECT 1
-        FROM unnest(string_to_array(COALESCE(ufs."workTime", ''), ',')) AS work_time_id(value)
-        WHERE btrim(work_time_id.value) = ${workTimeId}
-      )
-    `);
-  }
-
-  if (gender) {
-    filters.push(Prisma.sql`ufs.gender::text = ${gender}`);
-  }
-
-  if (pincode) {
-    filters.push(Prisma.sql`ufs.pincode::text ILIKE ${`%${pincode}%`}`);
-  }
-
-  if (from) {
-    filters.push(Prisma.sql`ufs."createdAt" >= ${from}`);
-  }
-
-  if (to) {
-    filters.push(Prisma.sql`ufs."createdAt" < ${to}`);
-  }
-
-  const where = filters.length > 0 ? Prisma.sql`WHERE ${Prisma.join(filters, " AND ")}` : Prisma.empty;
+  const where = buildUserFilterSearchWhere(filters);
 
   try {
     const prisma = getPrisma();
@@ -173,22 +134,4 @@ function parsePageSize(value: string | null) {
   return userFilterSearchPageSizeOptions.includes(parsed as (typeof userFilterSearchPageSizeOptions)[number])
     ? parsed
     : DEFAULT_PAGE_SIZE;
-}
-
-function parseDate(value: string | null, nextDay = false) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null;
-  }
-
-  const date = new Date(`${value}T00:00:00.000Z`);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  if (nextDay) {
-    date.setUTCDate(date.getUTCDate() + 1);
-  }
-
-  return date;
 }
