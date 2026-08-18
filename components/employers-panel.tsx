@@ -1,8 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Mail, Phone, RefreshCcw, Search, Users } from "lucide-react";
+import { Mail, MessageCircle, Phone, RefreshCcw, Search, Send, Users } from "lucide-react";
 import type { Employer } from "@/lib/employers";
+import {
+  defaultCustomEmployerMessage,
+  employerMessagePresets,
+  getEmployerMessage,
+  personalizeEmployerMessage,
+  type EmployerMessagePreset,
+} from "@/lib/employer-messages";
 
 type EmployersResponse = {
   status: number;
@@ -18,6 +25,10 @@ export function EmployersPanel() {
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPreset, setSelectedPreset] = useState<EmployerMessagePreset>("welcome");
+  const [customMessage, setCustomMessage] = useState(defaultCustomEmployerMessage);
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
+  const [sentMessages, setSentMessages] = useState<Record<number, string>>({});
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -47,11 +58,47 @@ export function EmployersPanel() {
 
     setItems(result?.data ?? []);
     setTotalCount(result?.totalCount ?? 0);
+    setDrafts((current) => {
+      const next = { ...current };
+      for (const employer of result?.data ?? []) {
+        next[employer.id] ??= personalizeEmployerMessage(getEmployerMessage("welcome"), employer.name);
+      }
+      return next;
+    });
   }, [queryString]);
 
   useEffect(() => {
     loadEmployers();
   }, [loadEmployers]);
+
+  useEffect(() => {
+    try {
+      setSentMessages(JSON.parse(localStorage.getItem("superhelper-employer-whatsapp-messages") ?? "{}"));
+    } catch {
+      setSentMessages({});
+    }
+  }, []);
+
+  function applyPreset() {
+    setDrafts((current) => {
+      const next = { ...current };
+      for (const employer of items) {
+        next[employer.id] = personalizeEmployerMessage(
+          getEmployerMessage(selectedPreset, customMessage),
+          employer.name,
+        );
+      }
+      return next;
+    });
+    setMessage(`${employerMessagePresets.find((preset) => preset.value === selectedPreset)?.label} applied.`);
+  }
+
+  function rememberSentMessage(employerId: number) {
+    const sentMessage = drafts[employerId] ?? "";
+    const next = { ...sentMessages, [employerId]: sentMessage };
+    setSentMessages(next);
+    localStorage.setItem("superhelper-employer-whatsapp-messages", JSON.stringify(next));
+  }
 
   return (
     <div className="page-stack employers-page">
@@ -92,6 +139,29 @@ export function EmployersPanel() {
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
+        <div className="message-preset-controls">
+          <label className="message-preset-field">
+            <span>WhatsApp message preset</span>
+            <select value={selectedPreset} onChange={(event) => setSelectedPreset(event.target.value as EmployerMessagePreset)}>
+              {employerMessagePresets.map((preset) => (
+                <option key={preset.value} value={preset.value}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selectedPreset === "custom" ? (
+            <textarea
+              aria-label="Custom WhatsApp message"
+              value={customMessage}
+              onChange={(event) => setCustomMessage(event.target.value)}
+            />
+          ) : null}
+          <button className="secondary-button inline-button" type="button" onClick={applyPreset} disabled={items.length === 0}>
+            <MessageCircle size={17} />
+            Apply to visible employers
+          </button>
+        </div>
       </section>
 
       {message ? <p className="form-message">{message}</p> : null}
@@ -103,6 +173,8 @@ export function EmployersPanel() {
               <th>Employer</th>
               <th>Contact</th>
               <th>Activity</th>
+              <th>Message to send</th>
+              <th>Last sent message</th>
               <th>Joined</th>
               <th>Updated</th>
             </tr>
@@ -110,12 +182,12 @@ export function EmployersPanel() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={5}>Loading employers...</td>
+                <td colSpan={7}>Loading employers...</td>
               </tr>
             ) : null}
             {!isLoading && items.length === 0 ? (
               <tr>
-                <td colSpan={5}>No employers found.</td>
+                <td colSpan={7}>No employers found.</td>
               </tr>
             ) : null}
             {items.map((item) => (
@@ -152,6 +224,30 @@ export function EmployersPanel() {
                     </small>
                   </div>
                 </td>
+                <td>
+                  <div className="employer-message-editor">
+                    <textarea
+                      aria-label={`Message for ${item.name || "employer"}`}
+                      value={drafts[item.id] ?? ""}
+                      onChange={(event) => setDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
+                    />
+                    <a
+                      className={`whatsapp-button${item.mobile ? "" : " whatsapp-button--disabled"}`}
+                      href={item.mobile ? whatsappUrl(item.mobile, drafts[item.id] ?? "") : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-disabled={!item.mobile}
+                      onClick={!item.mobile ? (event) => event.preventDefault() : () => rememberSentMessage(item.id)}
+                    >
+                      <Send size={14} /> Send on WhatsApp
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <div className="sent-message-preview">
+                    {sentMessages[item.id] ? <span>{sentMessages[item.id]}</span> : <small>Not sent yet</small>}
+                  </div>
+                </td>
                 <td>{formatDate(item.created_at)}</td>
                 <td>{formatDate(item.updated_at)}</td>
               </tr>
@@ -161,6 +257,10 @@ export function EmployersPanel() {
       </section>
     </div>
   );
+}
+
+function whatsappUrl(mobile: string, message: string) {
+  return `https://wa.me/${mobile.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
 }
 
 function formatDate(value: string | null) {
